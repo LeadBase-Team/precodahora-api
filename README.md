@@ -18,7 +18,14 @@ Crie uma instância para `PrecoDaHora` execute um dos métodos `sugestao` ou `pr
 
 ```js
 const PrecoDaHora = require("precodahora-api");
-const client = new PrecoDaHora();
+const client = new PrecoDaHora({
+	requestOptions: {
+		proxy: {
+		  host: "http://localhost",
+		  port: 8001
+		}
+	}
+});
 
 client
 	.sugestao({ item: "ABACAXI" })
