@@ -5,13 +5,16 @@ const HTMLParser = require("node-html-parser");
 const querystring = require("querystring");
 
 const config = require("./config");
+
 const isRequired = (parameter) => {
   throw new Error(`Missing ${parameter} required attribute`);
 };
 
 class PrecoDaHora {
-  constructor({ requestOptions = {} } = {}) {
+  constructor() {
     const userAgent = userAgentWithoutSeed();
+
+    const requestOptions = {};
 
     requestOptions.baseURL = config.baseUrl;
     requestOptions.headers = {
@@ -35,6 +38,13 @@ class PrecoDaHora {
   }
 
   async _getCookiesAndCsrfToken({ page }) {
+    if (this.csrfToken && this.cookies) {
+      return {
+        csrfToken: this.csrfToken,
+        cookies: this.cookies,
+      };
+    }
+
     const response = await this.request.get(page);
 
     const responseDataParsed = HTMLParser.parse(response.data);
@@ -54,6 +64,11 @@ class PrecoDaHora {
   async _setCookiesAndCsrfToken({ csrfToken, cookies }) {
     this.request.defaults.headers["X-CSRFToken"] = csrfToken;
     this.request.defaults.headers.Cookie = cookies;
+
+    this.cookies = cookies;
+    this.csrfToken = csrfToken;
+
+    return { csrfToken, cookies };
   }
 
   async sugestao({ item = isRequired("item") }) {
@@ -112,6 +127,24 @@ class PrecoDaHora {
     });
 
     return this.request.post("/produtos/", parameters);
+  }
+
+  async challenge({ code = isRequired("code") }) {
+    if (this.csrfToken && this.cookies) {
+      return this.request.post(
+        "/challenge/",
+        `item=${this.csrfToken}&g-recaptcha-response=${code}`
+      );
+    }
+
+    this._setCookiesAndCsrfToken(
+      await this._getCookiesAndCsrfToken({ page: "/challenge/" })
+    );
+
+    return this.request.post(
+      "/challenge/",
+      `item=${this.csrfToken}&g-recaptcha-response=${code}`
+    );
   }
 }
 

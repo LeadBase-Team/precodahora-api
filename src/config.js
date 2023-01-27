@@ -1,5 +1,5 @@
 const config = {
-  baseUrl: "https://precodahora.ba.gov.br:443",
+  baseUrl: "https://precodahora.ba.gov.br",
 };
 
 module.exports = config;
